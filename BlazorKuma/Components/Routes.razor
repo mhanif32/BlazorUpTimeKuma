@@ -1,0 +1,44 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using BlazorKuma.Components.Account.Shared
+@inject NavigationManager Nav
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(Program).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)">
+                <NotAuthorized>
+                    @if (!Nav.Uri.Contains("Account/Login"))
+                    {
+                        @* Use a dedicated component for redirection to avoid CS0120 errors *@
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <div class="d-flex vh-100 align-items-center justify-content-center bg-dark">
+                            <p class="text-white text-center">Please sign in to access TechUnited Monitor.</p>
+                        </div>
+                    }
+                </NotAuthorized>
+                <Authorizing>
+                    <div class="d-flex vh-100 align-items-center justify-content-center bg-black">
+                        <div class="text-center">
+                            <div class="spinner-border text-success mb-3" role="status"></div>
+                            <p class="text-muted small fw-bold">AUTHENTICATING OPERATOR...</p>
+                        </div>
+                    </div>
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(Layout.MainLayout)">
+                <div class="container mt-5 text-center">
+                    <h1 class="text-danger fw-bold">404</h1>
+                    <p class="text-white">Resource not found in TechUnited network.</p>
+                    <a href="/" class="btn btn-outline-success btn-sm">Return to Dashboard</a>
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

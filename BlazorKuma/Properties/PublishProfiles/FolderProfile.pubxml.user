@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- https://go.microsoft.com/fwlink/?LinkID=208121. -->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>\\10.0.0.19\app\BlazorKuma</_PublishTargetUrl>
+    <History>True|2026-03-27T17:24:05.3539063Z||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+</Project>

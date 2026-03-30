@@ -1,0 +1,123 @@
+﻿@page "/Account/Manage/DeletePersonalData"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using BlazorKuma.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<DeletePersonalData> Logger
+
+<PageTitle>Terminate Account - BlazorKuma</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="kuma-card border-danger shadow-lg">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="status-down me-2"></div>
+                    <h4 class="text-white m-0 fw-bold">Delete Account & Data</h4>
+                </div>
+
+                <StatusMessage Message="@message" />
+
+                <div class="alert bg-danger text-white border-0 shadow-sm mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-exclamation-octagon-fill fs-3 me-3"></i>
+                        <div>
+                            <strong>Irreversible Action</strong>
+                            <p class="mb-0 small opacity-75">All account data, settings, and node configurations will be permanently erased.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger small mb-3" role="alert" />
+
+                    @if (requirePassword)
+                    {
+                        <div class="mb-4">
+                            <label for="Input.Password" class="form-label text-muted small">Verify Password to Continue</label>
+                            <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control form-control-lg bg-dark text-white border-secondary" autocomplete="current-password" placeholder="Enter your password" />
+                            <ValidationMessage For="() => Input.Password" class="text-danger small" />
+                        </div>
+                    }
+
+                    <div class="pt-3 border-top border-secondary d-flex gap-2">
+                        <button class="btn btn-danger px-4 fw-bold" type="submit">
+                            <i class="bi bi-trash3 me-2"></i>Delete Everything
+                        </button>
+                        <a href="Account/Manage/PersonalData" class="btn btn-outline-secondary px-4">Cancel</a>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        @* Consequences Sidebar *@
+        <div class="col-xl-4 mt-4 mt-xl-0">
+            <div class="kuma-card border-dashed" style="border-style: dashed; opacity: 0.8;">
+                <h5 class="text-white mb-3"><i class="bi bi-info-circle me-2"></i>What is removed?</h5>
+                <ul class="list-unstyled text-muted small">
+                    <li class="mb-2 text-danger-emphasis"><i class="bi bi-x-circle me-2"></i> Access to all monitoring dashboards.</li>
+                    <li class="mb-2 text-danger-emphasis"><i class="bi bi-x-circle me-2"></i> Historical telemetry data.</li>
+                    <li class="mb-2 text-danger-emphasis"><i class="bi bi-x-circle me-2"></i> 2FA & Security keys.</li>
+                    <li class="mb-2 text-danger-emphasis"><i class="bi bi-x-circle me-2"></i> API keys for local AI integration.</li>
+                </ul>
+                <hr class="border-secondary" />
+                <p class="text-muted extra-small fst-italic">
+                    Note: Deleting your account will log you out immediately. You will need to re-register to access TechUnited services again.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? message;
+    private ApplicationUser user = default!;
+    private bool requirePassword;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        requirePassword = await UserManager.HasPasswordAsync(user);
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (requirePassword && !await UserManager.CheckPasswordAsync(user, Input.Password))
+        {
+            message = "Error: Incorrect password.";
+            return;
+        }
+
+        var result = await UserManager.DeleteAsync(user);
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException("Unexpected error occurred deleting user.");
+        }
+
+        await SignInManager.SignOutAsync();
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
+
+        RedirectManager.RedirectToCurrentPage();
+    }
+
+    private sealed class InputModel
+    {
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+    }
+}

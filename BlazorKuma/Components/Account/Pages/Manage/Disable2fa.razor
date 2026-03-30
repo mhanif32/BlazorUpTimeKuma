@@ -1,0 +1,103 @@
+﻿@page "/Account/Manage/Disable2fa"
+
+@using Microsoft.AspNetCore.Identity
+@using BlazorKuma.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<Disable2fa> Logger
+
+<PageTitle>Disable 2FA - BlazorKuma</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="kuma-card border-danger">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="status-down me-2"></div>
+                    <h4 class="text-white m-0 fw-bold">Disable Two-Factor Authentication</h4>
+                </div>
+
+                <StatusMessage />
+
+                <div class="alert bg-danger text-white border-0 shadow-sm mb-4">
+                    <div class="d-flex">
+                        <i class="bi bi-shield-exclamation fs-4 me-3"></i>
+                        <div>
+                            <strong>Security Downgrade Warning</strong>
+                            <p class="mb-0 small opacity-75">
+                                Disabling 2FA removes an essential layer of protection. Your account will rely solely on your password for access.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-muted small mb-4">
+                    <p>
+                        This action only disables the requirement for a 6-digit code. Your authenticator app keys are <strong>not</strong> reset.
+                        If you suspect your app key is compromised, you should
+                        <a href="Account/Manage/ResetAuthenticator" class="text-success text-decoration-none fw-bold">reset your keys</a> instead.
+                    </p>
+                </div>
+
+                <div class="pt-3 border-top border-secondary">
+                    <form @formname="disable-2fa" @onsubmit="OnSubmitAsync" method="post" class="d-inline">
+                        <AntiforgeryToken />
+                        <button class="btn btn-danger px-4 fw-bold" type="submit">
+                            <i class="bi bi-unlock me-2"></i>Confirm Disable 2FA
+                        </button>
+                    </form>
+                    <a href="Account/Manage/TwoFactorAuthentication" class="btn btn-outline-secondary px-4 ms-2">Keep 2FA Enabled</a>
+                </div>
+            </div>
+        </div>
+
+        @* Security Sidebar *@
+        <div class="col-xl-4 mt-4 mt-xl-0">
+            <div class="kuma-card border-dashed" style="border-style: dashed; opacity: 0.8;">
+                <h5 class="text-white mb-3"><i class="bi bi-info-circle me-2"></i>System Context</h5>
+                <p class="text-muted small">
+                    For high-performance nodes like your **RTX 4080** monitoring systems, maintaining 2FA is highly recommended to prevent unauthorized access to hardware telemetry and server controls.
+                </p>
+                <div class="mt-3 pt-3 border-top border-secondary">
+                    <span class="text-danger small"><i class="bi bi-dot"></i> Protection will be lowered.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ApplicationUser user = default!;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+
+        if (HttpMethods.IsGet(HttpContext.Request.Method) && !await UserManager.GetTwoFactorEnabledAsync(user))
+        {
+            throw new InvalidOperationException("Cannot disable 2FA for user as it's not currently enabled.");
+        }
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        var disable2faResult = await UserManager.SetTwoFactorEnabledAsync(user, false);
+        if (!disable2faResult.Succeeded)
+        {
+            throw new InvalidOperationException("Unexpected error occurred disabling 2FA.");
+        }
+
+        var userId = await UserManager.GetUserIdAsync(user);
+        Logger.LogInformation("User with ID '{UserId}' has disabled 2fa.", userId);
+
+        RedirectManager.RedirectToWithStatus(
+            "Account/Manage/TwoFactorAuthentication",
+            "2fa has been disabled. You can reenable 2fa when you setup an authenticator app",
+            HttpContext);
+    }
+}

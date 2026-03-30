@@ -1,0 +1,108 @@
+﻿@page "/Account/Manage"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using BlazorKuma.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Profile - BlazorKuma</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="kuma-card">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="status-up me-2"></div>
+                    <h4 class="text-white m-0 fw-bold">Account Profile</h4>
+                </div>
+
+                <StatusMessage />
+
+                <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger small mb-3" role="alert" />
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label text-muted small">Username</label>
+                        <input type="text" value="@username" id="username" class="form-control" style="opacity: 0.6; cursor: not-allowed;" disabled />
+                        <span class="text-muted" style="font-size: 0.7rem;">Usernames cannot be changed at this time.</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="Input.PhoneNumber" class="form-label text-muted small">Phone Number</label>
+                        <InputText @bind-Value="Input.PhoneNumber" id="Input.PhoneNumber" class="form-control" placeholder="e.g. +1 (555) 000-0000" />
+                        <ValidationMessage For="() => Input.PhoneNumber" class="text-danger small" />
+                    </div>
+
+                    <div class="pt-3 border-top border-secondary">
+                        <button type="submit" class="btn btn-success px-4 fw-bold">
+                            <i class="bi bi-save me-2"></i> Save Changes
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        <div class="col-xl-4 mt-4 mt-xl-0">
+            <div class="kuma-card h-100 border-dashed" style="border-style: dashed; opacity: 0.8;">
+                <h5 class="text-white mb-3">Security Settings</h5>
+                <p class="text-muted small">Manage your authentication methods and password settings to keep your **TechUnited** monitoring nodes secure.</p>
+                <div class="list-group list-group-flush bg-transparent">
+                    <a href="Account/Manage/ChangePassword" class="list-group-item bg-transparent text-success border-secondary px-0">
+                        <i class="bi bi-key me-2"></i> Change Password
+                    </a>
+                    <a href="Account/Manage/TwoFactorAuthentication" class="list-group-item bg-transparent text-success border-secondary px-0">
+                        <i class="bi bi-shield-lock me-2"></i> Two-factor authentication
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ApplicationUser user = default!;
+    private string? username;
+    private string? phoneNumber;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        username = await UserManager.GetUserNameAsync(user);
+        phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+
+        Input.PhoneNumber ??= phoneNumber;
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (Input.PhoneNumber != phoneNumber)
+        {
+            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+            if (!setPhoneResult.Succeeded)
+            {
+                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
+            }
+        }
+
+        await SignInManager.RefreshSignInAsync(user);
+        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
+    }
+
+    private sealed class InputModel
+    {
+        [Phone]
+        [Display(Name = "Phone number")]
+        public string? PhoneNumber { get; set; }
+    }
+}

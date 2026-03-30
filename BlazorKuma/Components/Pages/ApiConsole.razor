@@ -1,0 +1,86 @@
+﻿@page "/api-console"
+@using BlazorKuma.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<PageTitle>API Console - TechUnited</PageTitle>
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white fw-bold">
+            <i class="bi bi-code-square text-success me-2"></i>Dedicated Monitor API
+        </h2>
+        <span class="badge bg-success text-dark fw-bold">v1.0.0 - ACTIVE</span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="kuma-card h-100">
+                <h5 class="text-white mb-3">Endpoints</h5>
+                <div class="list-group list-group-flush bg-transparent">
+                    <div class="list-group-item bg-transparent border-secondary px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <code class="text-success">GET /api/monitors/status</code>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick='() => CopyToClipboard("status")'>
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <p class="small text-muted mt-2">Returns real-time status of all TechUnited servers (Internal & Public).</p>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h6 class="text-white">Docker Integration</h6>
+                    <p class="small text-muted">Use this internal URL within your Docker network:</p>
+                    <code class="d-block p-2 bg-black rounded border border-secondary text-info">
+                        http://blazorkuma-app/api/monitors/status
+                    </code>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="kuma-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="text-white m-0">Live JSON Response</h5>
+                    <button class="btn btn-sm btn-success" @onclick="RefreshData">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <pre class="bg-black p-3 rounded border border-secondary text-info" style="max-height: 500px; overflow-y: auto; font-size: 0.85rem;">
+@jsonPreview
+                </pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string jsonPreview = "Loading...";
+
+    protected override async Task OnInitializedAsync() => await RefreshData();
+
+    private async Task RefreshData()
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+        var data = await db.Monitors
+            .Select(m => new
+            {
+                m.Name,
+                m.IsUp,
+                m.LastResponse,
+                m.LastCheck
+            }).ToListAsync();
+
+        jsonPreview = System.Text.Json.JsonSerializer.Serialize(data, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private void CopyToClipboard(string endpoint)
+    {
+        // Logic to copy URL to clipboard
+        var url = $"{Nav.BaseUri}api/monitors/{endpoint}";
+        // You can use JSInterop here to call navigator.clipboard.writeText
+    }
+}

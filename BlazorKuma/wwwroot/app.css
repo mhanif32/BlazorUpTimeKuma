@@ -1,0 +1,331 @@
+/* --- 1. CORE VARIABLES --- */
+:root {
+    --bg-color: #0d1117;
+    --card-bg: #161b22;
+    --sidebar-bg: #0d1117;
+    --border-color: #30363d;
+    --kuma-green: #2ecc71;
+    --text-main: #c9d1d9;
+}
+
+body {
+    background-color: var(--bg-color) !important;
+    color: var(--text-main) !important;
+    margin: 0;
+}
+
+/* Fix for the white login inputs in your screenshot */
+/* --- Fix for Login/Identity Form Inputs --- */
+input.form-control,
+.form-control,
+select.form-select {
+    background-color: #0d1117 !important; /* Slightly darker than card for depth */
+    border: 1px solid var(--border-color) !important;
+    color: #fff !important;
+    padding: 0.75rem 1rem;
+}
+
+/* Fix for Chrome/Edge saved password yellow background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #c9d1d9 !important;
+    -webkit-box-shadow: 0 0 0px 1000px #161b22 inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Green focus effect for inputs */
+input.form-control:focus {
+    border-color: var(--kuma-green) !important;
+    box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.2) !important;
+    background-color: #0d1117 !important;
+}
+
+/* Fix for labels and help text */
+.form-label, .text-muted {
+    color: #8b949e !important;
+}
+
+/* --- 3. IDENTITY & ACCOUNT PAGE FIXES --- */
+
+/* Fix the Blue Active Link in Sidebar (seen in image_d6d459.png) */
+
+/* The 'Ghost' Active State */
+.nav-pills .nav-link.active {
+    background-color: rgba(46, 204, 113, 0.15) !important; /* Subtle transparent green */
+    color: var(--kuma-green) !important; /* Green text instead of dark */
+    border-left: 4px solid var(--kuma-green); /* Vertical accent line */
+    border-radius: 0 8px 8px 0; /* Rounded on the right side only */
+    font-weight: 700;
+    margin-right: 15px;
+    transition: all 0.2s ease;
+}
+
+.nav-link {
+    color: var(--text-muted) !important;
+    padding: 12px 20px !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+    .nav-link:hover {
+        color: var(--text-main) !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+/* Fix the Blue Login/Action Buttons (seen in image_d6edc6.png) */
+.btn-primary, .btn-success {
+    background-color: #2ecc71 !important;
+    border: none !important;
+    color: #0d1117 !important;
+    font-weight: 700;
+    padding: 0.6rem 1.2rem;
+    transition: transform 0.1s ease;
+}
+
+    .btn-primary:hover {
+        background-color: #27ae60 !important;
+        transform: translateY(-1px);
+    }
+
+/* --- 4. SIDEBAR & LOGOUT FIXES --- */
+.sidebar {
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--border-color);
+}
+
+/* Logout link styling (seen in image_d74be0.png) */
+.logout-button {
+    color: var(--kuma-red) !important;
+    opacity: 0.8;
+}
+
+    .logout-button:hover {
+        opacity: 1;
+        background: rgba(231, 76, 60, 0.1) !important;
+    }
+.kuma-container {
+    max-width: 1200px; /* Prevents the cards from stretching too far on wide screens */
+    margin: 0 auto;
+}
+/* --- 5. DASHBOARD COMPONENTS --- */
+.kuma-card {
+    background: var(--card-bg) !important;
+    /* Explicitly define the border - use a lighter shade of grey/blue */
+    border: 1px solid #30363d !important;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.2s ease-in-out;
+    /* This adds depth so the card doesn't blend into the background */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+    .kuma-card:hover {
+        border-color: var(--kuma-green) !important;
+        box-shadow: 0 0 12px rgba(46, 204, 113, 0.2);
+        transform: translateY(-2px);
+    }
+
+/* Pulse Animations */
+.status-up {
+    background-color: var(--kuma-green);
+    animation: pulse-green 2s infinite;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+@keyframes pulse-green {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(46, 204, 113, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+    }
+}
+
+/* --- 6. UTILITIES --- */
+.text-success {
+    color: var(--kuma-green) !important;
+}
+
+.bg-success {
+    background-color: var(--kuma-green) !important;
+    color: #0d1117 !important;
+}
+/* --- 7. IDENTITY PAGE HARD OVERRIDES --- */
+
+/* Fix for the white input boxes on the Login page */
+.auth-container input.form-control,
+.login-page-links input,
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+    background-color: #161b22 !important; /* Slightly lighter than background */
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+    padding: 0.8rem !important;
+}
+
+/* Fix for "Forgot password?" and other links */
+.auth-container a,
+.login-page-links a,
+.manage-account-links a {
+    color: var(--kuma-green) !important;
+    text-decoration: none !important;
+    font-size: 0.9rem;
+}
+
+    .auth-container a:hover {
+        text-decoration: underline !important;
+    }
+
+/* --- 8. DASHBOARD NAVIGATION POLISH --- */
+
+/* Fix for the Blue 'Dashboard' active highlight in the sidebar */
+.nav-item .active {
+    background-color: rgba(46, 204, 113, 0.1) !important;
+    border-left: 3px solid var(--kuma-green) !important;
+    color: var(--kuma-green) !important;
+    border-radius: 4px;
+}
+
+/* Sidebar Branding fix - ensuring BlazorKuma text is always white */
+.navbar-brand .text-white {
+    letter-spacing: 0.5px;
+}
+
+/* --- 9. DASHBOARD WIDGET POLISH --- */
+
+/* Response Time Sparkline - add a subtle green glow */
+.sparkline-svg polyline {
+    height: 50px !important;
+    margin-top: 10px;
+    filter: drop-shadow(0 0 5px rgba(46, 204, 113, 0.3));
+}
+
+/* Heartbeat Ticks - ensuring proper spacing and color */
+.tick {
+    height: 20px;
+    border-radius: 3px;
+    min-width: 2px;
+}
+.tick-up {
+    background-color: #2ecc71;
+}
+
+.tick-down {
+    background-color: #e74c3c;
+}
+
+.tick-empty {
+    background-color: #30363d;
+}
+
+/* Pulse animation for the live status circle */
+.status-badge {
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+.btn-outline-danger {
+    color: #ff6b6b !important; /* Brighter red for dark mode */
+    opacity: 0.9;
+}
+
+    .btn-outline-danger:hover {
+        background-color: rgba(231, 76, 60, 0.15) !important;
+        color: #ff4d4d !important;
+    }
+
+
+.pulse-bell {
+    animation: bell-shake 2s infinite;
+}
+
+.pulse-bell {
+    animation: bell-shake 2s infinite;
+}
+
+@keyframes bell-shake {
+    0% {
+        transform: rotate(0);
+    }
+    10% {
+        transform: rotate(15deg);
+    }
+    20% {
+        transform: rotate(-15deg);
+    }
+    30% {
+        transform: rotate(10deg);
+    }
+    40% {
+        transform: rotate(-10deg);
+    }
+    50% {
+        transform: rotate(0);
+    }
+    100% {
+        transform: rotate(0);
+    }
+}
+/* Color-code JSON boolean values in the Live Response area */
+.live-json-response {
+    font-family: 'Cascadia Code', 'Courier New', monospace;
+    line-height: 1.5;
+}
+
+    /* Make "true" values glow green */
+.text-json-true {
+    color: var(--kuma-green);
+    text-shadow: 0 0 5px rgba(46, 204, 113, 0.3);
+}
+/* 1. The Full-Screen Background */
+.auth-page-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #0d1117;
+    background-image: radial-gradient(circle at 50% 50%, #161b22 0%, #0d1117 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* Sits on top of everything */
+}
+
+/* 2. The Login Card Dimensions */
+.login-card {
+    width: 100%;
+    max-width: 400px; /* This prevents it from looking too wide */
+    padding: 2.5rem !important;
+    border: 1px solid rgba(48, 54, 61, 0.8) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+    border-top: 3px solid var(--kuma-green) !important; /* Visual accent */
+}
+
+    /* 3. Input Spacing Polish */
+    .login-card .form-control {
+        background-color: #090c10 !important;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+    .login-card .form-label {
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.4rem;
+        font-weight: 600;
+    }

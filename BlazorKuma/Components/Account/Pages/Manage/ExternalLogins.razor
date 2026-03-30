@@ -1,0 +1,169 @@
+﻿@page "/Account/Manage/ExternalLogins"
+
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+@using BlazorKuma.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IUserStore<ApplicationUser> UserStore
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>External Logins - BlazorKuma</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-xl-7">
+            <div class="kuma-card">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="status-up me-2"></div>
+                    <h4 class="text-white m-0 fw-bold">Manage External Logins</h4>
+                </div>
+
+                <StatusMessage />
+
+                @if (currentLogins?.Count > 0)
+                {
+                    <h6 class="text-muted small text-uppercase fw-bold mb-3">Registered Services</h6>
+                    <div class="list-group border-0 mb-4">
+                        @foreach (var login in currentLogins)
+                        {
+                            <div class="list-group-item bg-transparent border-secondary d-flex justify-content-between align-items-center px-0">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-link-45deg fs-4 text-success me-3"></i>
+                                    <span class="text-white fw-bold">@login.ProviderDisplayName</span>
+                                </div>
+                                <div>
+                                    @if (showRemoveButton)
+                                    {
+                                        <form @formname="@($"remove-login-{login.LoginProvider}")" @onsubmit="OnSubmitAsync" method="post">
+                                            <AntiforgeryToken />
+                                            <input type="hidden" name="@nameof(LoginProvider)" value="@login.LoginProvider" />
+                                            <input type="hidden" name="@nameof(ProviderKey)" value="@login.ProviderKey" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove @login.ProviderDisplayName">
+                                                <i class="bi bi-x-circle me-1"></i> Remove
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-dark text-muted">Primary Provider</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (otherLogins?.Count > 0)
+                {
+                    <div class="pt-4 border-top border-secondary">
+                        <h6 class="text-white mb-3">Add Connection</h6>
+                        <form action="Account/Manage/LinkExternalLogin" method="post">
+                            <AntiforgeryToken />
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var provider in otherLogins)
+                                {
+                                    <button type="submit" class="btn btn-outline-success" name="Provider" value="@provider.Name" title="Log in using @provider.DisplayName">
+                                        <i class="bi bi-plus-lg me-2"></i>Link @provider.DisplayName
+                                    </button>
+                                }
+                            </div>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Integration Sidebar *@
+        <div class="col-xl-4 mt-4 mt-xl-0">
+            <div class="kuma-card border-dashed" style="border-style: dashed; opacity: 0.8;">
+                <h5 class="text-white mb-3"><i class="bi bi-cpu me-2"></i>SSO Integration</h5>
+                <p class="text-muted small">
+                    Linking external providers allows for faster authentication across your development environment.
+                </p>
+                <div class="alert bg-dark border-secondary mt-3">
+                    <i class="bi bi-shield-check text-success me-2"></i>
+                    <span class="text-muted small">External logins are verified via secure OAuth2 protocols.</span>
+                </div>
+                <p class="text-muted small mt-3">
+                    <strong>Note:</strong> You cannot remove your last login method unless you have set a local **TechUnited** password first.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public const string LinkLoginCallbackAction = "LinkLoginCallback";
+    private ApplicationUser user = default!;
+    private IList<UserLoginInfo>? currentLogins;
+    private IList<AuthenticationScheme>? otherLogins;
+    private bool showRemoveButton;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private string? LoginProvider { get; set; }
+
+    [SupplyParameterFromForm]
+    private string? ProviderKey { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Action { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        currentLogins = await UserManager.GetLoginsAsync(user);
+        otherLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync())
+            .Where(auth => currentLogins.All(ul => auth.Name != ul.LoginProvider))
+            .ToList();
+
+        string? passwordHash = null;
+        if (UserStore is IUserPasswordStore<ApplicationUser> userPasswordStore)
+        {
+            passwordHash = await userPasswordStore.GetPasswordHashAsync(user, HttpContext.RequestAborted);
+        }
+
+        showRemoveButton = passwordHash is not null || currentLogins.Count > 1;
+
+        if (HttpMethods.IsGet(HttpContext.Request.Method) && Action == LinkLoginCallbackAction)
+        {
+            await OnGetLinkLoginCallbackAsync();
+        }
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        var result = await UserManager.RemoveLoginAsync(user, LoginProvider!, ProviderKey!);
+        if (!result.Succeeded)
+        {
+            RedirectManager.RedirectToCurrentPageWithStatus("Error: The external login was not removed.", HttpContext);
+        }
+
+        await SignInManager.RefreshSignInAsync(user);
+        RedirectManager.RedirectToCurrentPageWithStatus("The external login was removed.", HttpContext);
+    }
+
+    private async Task OnGetLinkLoginCallbackAsync()
+    {
+        var userId = await UserManager.GetUserIdAsync(user);
+        var info = await SignInManager.GetExternalLoginInfoAsync(userId);
+        if (info is null)
+        {
+            RedirectManager.RedirectToCurrentPageWithStatus("Error: Could not load external login info.", HttpContext);
+        }
+
+        var result = await UserManager.AddLoginAsync(user, info);
+        if (!result.Succeeded)
+        {
+            RedirectManager.RedirectToCurrentPageWithStatus("Error: The external login was not added. External logins can only be associated with one account.", HttpContext);
+        }
+
+        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        RedirectManager.RedirectToCurrentPageWithStatus("The external login was added.", HttpContext);
+    }
+}

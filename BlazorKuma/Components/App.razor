@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="app.css" asp-append-version="true" />
+    <link rel="stylesheet" href="BlazorKuma.styles.css" />
+    <ImportMap />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    @* Force Prerender OFF for the Head *@
+    <HeadOutlet @rendermode="PageRenderMode" />
+</head>
+
+<body>
+    @* Force Prerender OFF for the Routes *@
+    <Routes @rendermode="PageRenderMode" />
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    // This logic allows /Account pages to load as Static SSR
+    // while the Dashboard stays Interactive.
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.Request.Path.StartsWithSegments("/Account")
+            ? null
+            : new InteractiveServerRenderMode(prerender: false);
+}

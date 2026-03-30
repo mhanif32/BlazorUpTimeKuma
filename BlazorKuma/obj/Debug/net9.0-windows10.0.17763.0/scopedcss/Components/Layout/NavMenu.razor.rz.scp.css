@@ -1,0 +1,36 @@
+/* Sidebar Layout Fixes */
+.nav-scrollable[b-wg083i4mnp] {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav.flex-column[b-wg083i4mnp] {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 3.5rem); /* Adjusts for the top branding bar */
+}
+
+/* Ensure the bottom section actually sticks to the bottom */
+.pb-3[b-wg083i4mnp] {
+    margin-top: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    background: rgba(0, 0, 0, 0.15); /* Subtly darker to separate from nav links */
+}
+
+/* Smooth icons for the sidebar */
+.bi[b-wg083i4mnp] {
+    font-size: 1.1rem;
+    vertical-align: middle;
+}
+
+/* User Profile Styling */
+.user-profile-link[b-wg083i4mnp] {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color) !important;
+}
+
+    .user-profile-link:hover[b-wg083i4mnp] {
+        background: rgba(46, 204, 113, 0.08) !important;
+        border-color: var(--kuma-green) !important;
+    }

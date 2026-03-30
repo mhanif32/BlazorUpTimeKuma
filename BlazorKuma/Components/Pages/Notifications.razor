@@ -1,0 +1,122 @@
+﻿@page "/notifications"
+@using BlazorKuma.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@rendermode InteractiveServer
+
+<PageTitle>Audit Records - BlazorKuma</PageTitle>
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white fw-bold">
+            <i class="bi bi-journal-text text-success me-2"></i>Infrastructure Records
+        </h2>
+        <button class="btn btn-outline-danger btn-sm" @onclick="ClearAll">
+            <i class="bi bi-trash3 me-1"></i> Clear All History
+        </button>
+    </div>
+
+    @if (records == null)
+    {
+        <div class="text-center mt-5">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="text-muted mt-2">Loading Audit Logs...</p>
+        </div>
+    }
+    else if (!records.Any())
+    {
+        <div class="alert alert-dark border-secondary text-center py-5">
+            <i class="bi bi-check-circle fs-1 text-success"></i>
+            <h4 class="mt-3">System Healthy</h4>
+            <p class="text-muted">No audit failures or warnings recorded yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive bg-dark rounded border border-secondary">
+            <table class="table table-dark table-hover mb-0">
+                <thead class="table-group-divider">
+                    <tr>
+                        <th class="ps-4">Timestamp</th>
+                        <th>Event</th>
+                        <th>Details</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var note in records)
+                    {
+                        <tr style="opacity: @(note.IsRead ? "0.6" : "1")">
+                            <td class="ps-4 small align-middle">@note.Timestamp.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td class="align-middle">
+                                <span class="badge @(GetSeverityClass(note.Severity))">@note.Title</span>
+                            </td>
+                            <td class="align-middle text-info small">@note.Message</td>
+                            <td class="align-middle">
+                                @if (note.IsRead)
+                                {
+                                    <span class="text-muted"><i class="bi bi-eye-fill me-1"></i> Read</span>
+                                }
+                                else
+                                {
+                                    <span class="text-success"><i class="bi bi-envelope-fill me-1"></i> New</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                @if (!note.IsRead)
+                                {
+                                    <button class="btn btn-link btn-sm text-decoration-none text-success" @onclick="() => MarkAsRead(note.Id)">
+                                        Mark as Seen
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<NotificationRecord>? records;
+
+    protected override async Task OnInitializedAsync() => await LoadRecords();
+
+    private async Task LoadRecords()
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+        records = await db.Notifications
+            .OrderByDescending(n => n.Timestamp)
+            .Take(100)
+            .ToListAsync();
+    }
+
+    private async Task MarkAsRead(int id)
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+        var note = await db.Notifications.FindAsync(id);
+        if (note != null)
+        {
+            note.IsRead = true;
+            await db.SaveChangesAsync();
+        }
+        await LoadRecords();
+    }
+
+    private async Task ClearAll()
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+        db.Notifications.RemoveRange(db.Notifications);
+        await db.SaveChangesAsync();
+        await LoadRecords();
+    }
+
+    private string GetSeverityClass(string severity) => severity switch
+    {
+        "Critical" => "bg-danger",
+        "Warning" => "bg-warning text-dark",
+        _ => "bg-info"
+    };
+}

@@ -1,0 +1,109 @@
+﻿@page "/Account/Manage/GenerateRecoveryCodes"
+
+@using Microsoft.AspNetCore.Identity
+@using BlazorKuma.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<GenerateRecoveryCodes> Logger
+
+<PageTitle>Generate Recovery Codes - BlazorKuma</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-xl-7">
+            @if (recoveryCodes is not null)
+            {
+                <div class="kuma-card border-success shadow-lg">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="status-up me-2"></div>
+                        <h4 class="text-white m-0 fw-bold">New Recovery Codes Generated</h4>
+                    </div>
+                    <ShowRecoveryCodes RecoveryCodes="recoveryCodes.ToArray()" StatusMessage="@message" />
+                </div>
+            }
+            else
+            {
+                <div class="kuma-card border-danger">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="status-down me-2"></div>
+                        <h4 class="text-white m-0 fw-bold">Generate 2FA Recovery Codes</h4>
+                    </div>
+
+                    <div class="alert bg-danger text-white border-0 shadow-sm mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-shield-lock-fill fs-4 me-3"></i>
+                            <div>
+                                <strong>Keep these codes secure.</strong>
+                                <p class="mb-0 small opacity-75">
+                                    If you lose access to your mobile device and do not have these codes, you will be permanently locked out of your **TechUnited** account.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-muted small mb-4">
+                        <p>Generating new codes will invalidate any recovery codes you previously generated. Your authenticator app (TOTP) will continue to work normally.</p>
+                    </div>
+
+                    <div class="pt-3 border-top border-secondary">
+                        <form @formname="generate-recovery-codes" @onsubmit="OnSubmitAsync" method="post" class="d-inline">
+                            <AntiforgeryToken />
+                            <button class="btn btn-danger px-4 fw-bold" type="submit">
+                                <i class="bi bi-arrow-repeat me-2"></i>Generate New Codes
+                            </button>
+                        </form>
+                        <a href="Account/Manage/TwoFactorAuthentication" class="btn btn-outline-secondary px-4 ms-2">Cancel</a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* Best Practice Sidebar *@
+        <div class="col-xl-4 mt-4 mt-xl-0">
+            <div class="kuma-card border-dashed" style="border-style: dashed; opacity: 0.8;">
+                <h5 class="text-white mb-3"><i class="bi bi-safe2 me-2"></i>Storage Tips</h5>
+                <ul class="text-muted small ps-3">
+                    <li class="mb-2">Store codes in a secure password manager (e.g., Bitwarden).</li>
+                    <li class="mb-2">Print a physical copy and keep it in a secure location.</li>
+                    <li>Avoid saving them as a plain text file on your workstation.</li>
+                </ul>
+                <div class="mt-3 pt-3 border-top border-secondary text-center">
+                    <a href="Account/Manage/ResetAuthenticator" class="text-success small text-decoration-none">
+                        Need to reset your app key instead?
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? message;
+    private ApplicationUser user = default!;
+    private IEnumerable<string>? recoveryCodes;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+
+        var isTwoFactorEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
+        if (!isTwoFactorEnabled)
+        {
+            throw new InvalidOperationException("Cannot generate recovery codes for user because they do not have 2FA enabled.");
+        }
+    }
+
+    private async Task OnSubmitAsync()
+    {
+        var userId = await UserManager.GetUserIdAsync(user);
+        recoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
+        message = "You have generated new recovery codes.";
+
+        Logger.LogInformation("User with ID '{UserId}' has generated new 2FA recovery codes.", userId);
+    }
+}

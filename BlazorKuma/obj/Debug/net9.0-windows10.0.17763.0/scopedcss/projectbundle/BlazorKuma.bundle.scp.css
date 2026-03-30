@@ -1,0 +1,146 @@
+/* _content/BlazorKuma/Components/Layout/MainLayout.razor.rz.scp.css */
+:root[b-t40b87239b] {
+    --kuma-blue: #1677ff;
+    --kuma-bg: #0b0e14;
+    --kuma-card: #141920;
+    --kuma-border: #232931;
+    --kuma-text: #e6e6e6;
+}
+
+.page[b-t40b87239b] {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--kuma-bg);
+    color: var(--kuma-text);
+    min-height: 100vh;
+}
+
+main[b-t40b87239b] {
+    flex: 1;
+}
+
+/* Sidebar: Deep dark with subtle right border */
+.sidebar[b-t40b87239b] {
+    background-color: #0d1117;
+    border-right: 1px solid var(--kuma-border);
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Top Row: Dark transparent glass effect */
+.top-row[b-t40b87239b] {
+    background-color: rgba(13, 17, 23, 0.8);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--kuma-border);
+    justify-content: flex-end;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+}
+
+    /* Auth Links in Top Row */
+    .top-row[b-t40b87239b]  a,
+    .top-row[b-t40b87239b]  .btn-link {
+        white-space: nowrap;
+        margin-left: 1.5rem;
+        text-decoration: none;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+        transition: color 0.2s;
+    }
+
+        .top-row[b-t40b87239b]  a:hover {
+            color: var(--kuma-blue);
+            text-decoration: none;
+        }
+
+/* Content Area Card Wrapper (The kuma-card you see in your screenshot) */
+[b-t40b87239b] .kuma-card {
+    background-color: var(--kuma-card);
+    border: 1px solid var(--kuma-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 640.98px) {
+    .top-row[b-t40b87239b] {
+        justify-content: space-between;
+    }
+}
+
+@media (min-width: 641px) {
+    .page[b-t40b87239b] {
+        flex-direction: row;
+    }
+
+    .sidebar[b-t40b87239b] {
+        width: 260px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .top-row[b-t40b87239b] {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    /* Adjust main content padding */
+    article[b-t40b87239b] {
+        padding: 2rem !important;
+    }
+}
+
+/* Error UI: Dark themed for developers */
+#blazor-error-ui[b-t40b87239b] {
+    background: #1a1111;
+    color: #ff8080;
+    border-top: 2px solid #ff4d4d;
+    bottom: 0;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    padding: 0.8rem;
+    display: none;
+}
+/* _content/BlazorKuma/Components/Layout/NavMenu.razor.rz.scp.css */
+/* Sidebar Layout Fixes */
+.nav-scrollable[b-wg083i4mnp] {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav.flex-column[b-wg083i4mnp] {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 3.5rem); /* Adjusts for the top branding bar */
+}
+
+/* Ensure the bottom section actually sticks to the bottom */
+.pb-3[b-wg083i4mnp] {
+    margin-top: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+    background: rgba(0, 0, 0, 0.15); /* Subtly darker to separate from nav links */
+}
+
+/* Smooth icons for the sidebar */
+.bi[b-wg083i4mnp] {
+    font-size: 1.1rem;
+    vertical-align: middle;
+}
+
+/* User Profile Styling */
+.user-profile-link[b-wg083i4mnp] {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color) !important;
+}
+
+    .user-profile-link:hover[b-wg083i4mnp] {
+        background: rgba(46, 204, 113, 0.08) !important;
+        border-color: var(--kuma-green) !important;
+    }

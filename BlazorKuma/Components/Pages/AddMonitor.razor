@@ -1,0 +1,96 @@
+﻿@page "/add"
+@using Microsoft.AspNetCore.Authorization
+@using BlazorKuma.Models
+@attribute [Authorize]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Nav
+
+<div class="container py-4">
+    <div class="mb-4">
+        <a href="/" class="text-muted text-decoration-none small">
+            <i class="bi bi-arrow-left me-1"></i> Back to Infrastructure
+        </a>
+    </div>
+
+    <div class="kuma-card mx-auto shadow-lg" style="max-width: 600px; border-top: 3px solid var(--kuma-green); padding: 2rem;">
+        <h3 class="text-white mb-1">🆕 Add New Monitor</h3>
+        <p class="text-muted small mb-4">Setup a new target for the TechUnited Monitoring System.</p>
+
+        <EditForm Model="newMonitor" OnValidSubmit="HandleSave">
+            <DataAnnotationsValidator />
+
+            @* --- MONITOR TYPE SELECTION --- *@
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold">
+                    <i class="bi bi-layers me-1"></i> INFRASTRUCTURE TYPE
+                </label>
+                <select @bind="selectedTypeString" class="form-select bg-dark border-secondary text-white">
+                    <option value="Web">🌐 Web Service / URL</option>
+                    <option value="Database">🗄️ Database Server (SQL/IP)</option>
+                    <option value="API">🔌 Dedicated API Endpoint</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold">
+                    <i class="bi bi-tag me-1"></i> FRIENDLY NAME
+                </label>
+                <InputText @bind-Value="newMonitor.Name" class="form-control" placeholder="e.g. SQL-SRV-01 or TechUnited Web" />
+                <ValidationMessage For="@(() => newMonitor.Name)" class="text-danger small mt-1" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold">
+                    <i class="bi bi-globe me-1"></i> TARGET (URL OR IP)
+                </label>
+                <InputText @bind-Value="newMonitor.Target" class="form-control" placeholder="e.g. 10.0.0.30 or https://techunited.biz" />
+                <ValidationMessage For="@(() => newMonitor.Target)" class="text-danger small mt-1" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label text-muted small fw-bold">
+                    <i class="bi bi-clock-history me-1"></i> CHECK INTERVAL (SECONDS)
+                </label>
+                <InputNumber @bind-Value="newMonitor.IntervalSeconds" class="form-control" />
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-success fw-bold py-2">
+                    <i class="bi bi-shield-check me-2"></i>SAVE MONITOR
+                </button>
+                <button type="button" class="btn btn-outline-secondary border-0" @onclick='() => Nav.NavigateTo("/")'>
+                    Cancel
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private MonitorItem newMonitor = new() { IntervalSeconds = 60 };
+    private string selectedTypeString = "Web";
+
+    private async Task HandleSave()
+    {
+        // Tag the name or set metadata based on selection to help the filter
+        // If you haven't added a 'Type' property to your model yet,
+        // we can use the Name as a temporary tag for your page filters.
+        if (selectedTypeString == "Database" && !newMonitor.Name.Contains("[DB]"))
+        {
+            newMonitor.Name = $"[DB] {newMonitor.Name}";
+        }
+        else if (selectedTypeString == "API" && !newMonitor.Name.Contains("[API]"))
+        {
+            newMonitor.Name = $"[API] {newMonitor.Name}";
+        }
+
+        using var db = await DbFactory.CreateDbContextAsync();
+        db.Monitors.Add(newMonitor);
+        await db.SaveChangesAsync();
+
+        // Navigate based on what was added
+        if (selectedTypeString == "Database") Nav.NavigateTo("/databases");
+        else if (selectedTypeString == "API") Nav.NavigateTo("/api-console");
+        else Nav.NavigateTo("/");
+    }
+}

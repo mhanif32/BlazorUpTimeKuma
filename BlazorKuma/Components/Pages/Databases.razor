@@ -1,0 +1,83 @@
+﻿@page "/databases"
+@using BlazorKuma.Data
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@rendermode InteractiveServer
+
+<PageTitle>Database Monitoring - TechUnited</PageTitle>
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-white fw-bold">
+            <i class="bi bi-database-fill-gear text-success me-2"></i>Database Infrastructure
+        </h2>
+        <span class="badge bg-dark border border-secondary text-muted">
+            Internal Network: 10.0.0.x
+        </span>
+    </div>
+
+    @if (dbMonitors == null)
+    {
+        <div class="text-center mt-5">
+            <div class="spinner-border text-success" role="status"></div>
+        </div>
+    }
+    else if (!dbMonitors.Any())
+    {
+        <div class="alert alert-dark border-secondary text-center py-5">
+            <i class="bi bi-search fs-1 text-muted"></i>
+            <h4 class="mt-3">No Databases Found</h4>
+            <p class="text-muted">Add a monitor with "SQL" or "10.0.0" in the name to see it here.</p>
+        </div>
+    }
+    else
+    {
+        <div class="kuma-container">
+            @foreach (var m in dbMonitors)
+            {
+                <div class="kuma-card">
+                    <div class="kuma-touch @(m.IsUp ? "touch-up" : "touch-down")"></div>
+                    <div class="kuma-info">
+                        <div style="min-width: 250px;">
+                            <div class="d-flex align-items-center">
+                                <h6 class="m-0 text-white fw-bold">@m.Name</h6>
+                                <span class="ms-2 badge bg-secondary" style="font-size: 0.6rem;">MSSQL</span>
+                            </div>
+                            <small class="text-muted">@m.Target</small>
+                        </div>
+
+                        <div class="d-flex gap-1 align-items-center">
+                            @foreach (var h in m.Heartbeats.TakeLast(24))
+                            {
+                                <div class="dot @(h.IsUp ? "dot-up" : "dot-down")"
+                                     style="width: 6px; height: 20px; opacity: @(h.IsUp ? "1" : "0.5")"></div>
+                            }
+                        </div>
+
+                        <div class="text-end" style="width: 100px;">
+                            <div class="fw-bold @(m.IsUp ? "text-success" : "text-danger")" style="font-size: 0.8rem;">
+                                @(m.IsUp ? "ONLINE" : "OFFLINE")
+                            </div>
+                            <div class="text-muted" style="font-size: 0.65rem;">@m.LastResponse ms</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<MonitorItem>? dbMonitors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+
+        // Filter: We look for "SQL" in the name or the internal IP range
+        dbMonitors = await db.Monitors
+            .Include(m => m.Heartbeats)
+            .Where(m => m.Name.Contains("SQL") || m.Target.Contains("10.0.0."))
+            .ToListAsync();
+    }
+}

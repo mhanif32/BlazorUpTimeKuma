@@ -1,0 +1,79 @@
+﻿@page "/edit/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+@inject IDbContextFactory<ApplicationDbContext> DbFactory
+@inject NavigationManager Nav
+
+<div class="container mt-5">
+    <div class="mb-4">
+        <a href="/" class="text-muted text-decoration-none small">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="kuma-card mx-auto shadow-lg" style="max-width: 600px; border-top: 3px solid var(--kuma-green);">
+        <h3 class="text-white mb-1">🛠️ Edit Monitor</h3>
+        <p class="text-muted small mb-4">Modify the configuration for this infrastructure node.</p>
+
+        @if (model == null)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="text-muted mt-2">Loading node configuration...</p>
+            </div>
+        }
+        else
+        {
+            <EditForm Model="model" OnValidSubmit="HandleUpdate">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">
+                        <i class="bi bi-tag me-1"></i> FRIENDLY NAME
+                    </label>
+                    <InputText @bind-Value="model.Name" class="form-control" />
+                    <ValidationMessage For="@(() => model.Name)" class="text-danger small mt-1" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">
+                        <i class="bi bi-globe me-1"></i> TARGET URL/IP
+                    </label>
+                    <InputText @bind-Value="model.Target" class="form-control" />
+                    <ValidationMessage For="@(() => model.Target)" class="text-danger small mt-1" />
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-success fw-bold py-2">
+                        <i class="bi bi-save me-2"></i>UPDATE CONFIGURATION
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary border-0" @onclick='() => Nav.NavigateTo("/")'>
+                        Cancel
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private BlazorKuma.Models.MonitorItem? model;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var db = await DbFactory.CreateDbContextAsync();
+        model = await db.Monitors.FindAsync(Id);
+    }
+
+    private async Task HandleUpdate()
+    {
+        if (model != null)
+        {
+            using var db = await DbFactory.CreateDbContextAsync();
+            db.Monitors.Update(model);
+            await db.SaveChangesAsync();
+            Nav.NavigateTo("/");
+        }
+    }
+}

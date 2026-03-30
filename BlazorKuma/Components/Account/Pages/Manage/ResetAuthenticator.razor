@@ -1,0 +1,87 @@
+﻿@page "/Account/Manage/ResetAuthenticator"
+
+@using Microsoft.AspNetCore.Identity
+@using BlazorKuma.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityUserAccessor UserAccessor
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<ResetAuthenticator> Logger
+
+<PageTitle>Reset Authenticator - BlazorKuma</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="kuma-card border-danger">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="status-down me-2"></div>
+                    <h4 class="text-white m-0 fw-bold">Reset Authenticator Key</h4>
+                </div>
+
+                <StatusMessage />
+
+                <div class="alert bg-danger text-white border-0 shadow-sm mb-4">
+                    <div class="d-flex">
+                        <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                        <div>
+                            <strong>Critical Security Warning</strong>
+                            <p class="mb-0 small opacity-75">
+                                Resetting your key will invalidate your current authenticator app immediately.
+                                <strong>2FA will be disabled</strong> until you complete the reconfiguration process.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-muted small mb-4">
+                    <p>If you do not complete the setup after resetting, you may lose access to your **TechUnited** monitoring nodes if password-only login is restricted.</p>
+                </div>
+
+                <div class="pt-3 border-top border-secondary">
+                    <form @formname="reset-authenticator" @onsubmit="OnSubmitAsync" method="post" class="d-inline">
+                        <AntiforgeryToken />
+                        <button class="btn btn-danger px-4 fw-bold" type="submit">
+                            <i class="bi bi-shield-slash me-2"></i>Reset Key Now
+                        </button>
+                    </form>
+                    <a href="Account/Manage/TwoFactorAuthentication" class="btn btn-outline-secondary px-4 ms-2">Cancel</a>
+                </div>
+            </div>
+        </div>
+
+        @* Recovery Reminder Sidebar *@
+        <div class="col-xl-4 mt-4 mt-xl-0">
+            <div class="kuma-card border-dashed" style="border-style: dashed; opacity: 0.8;">
+                <h5 class="text-white mb-3"><i class="bi bi-info-circle me-2"></i>What happens next?</h5>
+                <ol class="text-muted small ps-3">
+                    <li class="mb-2">Your current authentication codes will stop working.</li>
+                    <li class="mb-2">You will be redirected to the **Setup Authenticator** page.</li>
+                    <li>You must scan a <strong>new QR code</strong> with your mobile device to restore security.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private async Task OnSubmitAsync()
+    {
+        var user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+        await UserManager.SetTwoFactorEnabledAsync(user, false);
+        await UserManager.ResetAuthenticatorKeyAsync(user);
+        var userId = await UserManager.GetUserIdAsync(user);
+        Logger.LogInformation("User with ID '{UserId}' has reset their authentication app key.", userId);
+
+        await SignInManager.RefreshSignInAsync(user);
+
+        RedirectManager.RedirectToWithStatus(
+            "Account/Manage/EnableAuthenticator",
+            "Your authenticator app key has been reset, you will need to configure your authenticator app using the new key.",
+            HttpContext);
+    }
+}
